@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="dialog/smoke.css">
+	<link rel="stylesheet" href="dialog/lightbox.css">
+	<link href='http://fonts.googleapis.com/css?family=Lilita+One' rel='stylesheet'>
+	<link rel="icon" type="image/ico" href="images/icon.ico">
+	<script language="javascript" src="data/people.js"></script>
+	<script language="javascript" src="data/family.js"></script>
+	<script language="javascript" src="data/photos.js"></script>
+	<script language="javascript" src="data/census.js"></script>
+	<script language="javascript" src="data/sources.js"></script>
+	<script language="javascript" src="dialog/smoke.js"></script>
+	<script language="javascript" src="dialog/jquery-1.10.2.min.js"></script>
+	<script language="javascript" src="dialog/lightbox-2.6.min.js"></script>
+   <script language="javascript" src="base.js"></script>
+	<script language="javascript" src="charts.js"></script>
+	<script language="javascript" src="census.js"></script>
+	<script language="javascript" src="infolayer.js"></script>
+	<script language="javascript" src="menu.js"></script>
+	<script language="javascript" src="tree.js"></script>
+	<title>Hamilton Family Tree</title>
+</head>
+<body oncontextmenu="return false;">
+
+<!-- All Canvas Elements -->
+	<div id="tooltip" class="hide"></div>
+	<canvas id="treeCanvas" tabindex="1">
+		I'm afraid your web browser is too old to display this website.  <br> 
+		Please download the latest version of <a href="http://www.google.com/chrome">Google Chrome</a>, 
+		<a href="http://http://windows.microsoft.com/en-GB/internet-explorer/products/ie/home">Internet Explorer</a>
+		or <a href="http://www.mozilla.org/en-US/firefox/">Mozilla Firefox.</a>
+	</canvas>
+	<canvas id="infoCanvas" class="hide"></canvas>
+		<button id="info_CLOSE" class="hide" alt="Close Button" onclick="hide(['infoCanvas','infoBox','info_CLOSE']);">X</button>
+	<canvas id="menuCanvas" tabindex="2" class="hide"></canvas>
+	<canvas id="scaleCanvas" onMouseOver="showTooltip(1);" onMouseOut="hide(['tooltip']);"></canvas>
+	<span id="GoToHome" onClick="getPerson(HomeNode); return false;" onMouseOver="showTooltip(2);" onMouseOut="hide(['tooltip']);">Home Person</span>
+	<span id="ZoomIn" onClick="ZoomIn(); return false;" onMouseOver="showTooltip(3);" onMouseOut="hide(['tooltip']);">+</span>
+	<span id="ZoomOut" onClick="ZoomOut(); return false;" onMouseOver="showTooltip(4);" onMouseOut="hide(['tooltip']);">-</span>
+	<img id="FullScreen" src="images/resize.png" onClick="RequestFullScreen();" onMouseOver="showTooltip(30);" onMouseOut="hide(['tooltip']);" />
+	
+	<a id="Hover_1" class="hide">i</a>
+	<a id="Hover_2" class="hide">+</a>
+	<div id="Hover_MENU" class="hide">
+		<ul><li>View Photos</li><li>Show Info</li><li>Edit Person</li><li>Add Parent</li><li>Add Spouse</li><li>Add Child</li></ul>
+	</div>
+	
+	<div id="Window_BG" class="hide">
+		<div id="Window">
+			<img src="images/icon64.ico" class="icon" />
+			<div id="Window_TITLE"></div>
+			<div id="Window_BODY"></div>
+		</div>
+	</div>
+	
+<!-- Buttons -->
+	<button id="CloseBtn" class="hide" alt="Close Button" onclick="closeButton()" onMouseOver="showTooltip(5);" onMouseOut="hide(['tooltip']);">X</button>
+	<button id="HelpBtn" class="hide" onMouseOver="showTooltip(6); Help();" onMouseOut="hide(['tooltip']); Help();">?</button>
+	
+<!-- Background Items -->
+	<div id="Copyright"> Copyright &copy; 2012 Euan Hamilton </div>
+
+<!-- Menu Items -->
+<!-- Photo Gallery -->
+	<div id="gallery">
+		Type: <select id="gallery_TYPE" onchange="photoGallery(' ')" onMouseOver="showTooltip(7);" onMouseOut="hide(['tooltip']);">
+			<option value="ALL" selected="selected">All</option><option value="FAM">Family</option>
+			<option value="IND">Individual</option><option value="WED">Wedding</option>
+			<option value="MIL">Military</option><option value="GRA">Grave</option>
+			<option value="OBJ">Object</option><option value="DOC">Document</option>
+		</select> &nbsp;&nbsp;&nbsp;
+		<select id="gallery_ID" onchange="photoGallery(' ')"></select> 
+	</div>
+	
+<!-- Search -->
+	<div id="Search">
+		<b>Include all of the data you know <br> about the individual.</b><br> &nbsp; <br>
+		<form onSubmit="return false;" id="searchForm">
+			1)  <input type="text" id="s01" placeholder="First Name" onMouseOver="showTooltip(8);" onMouseOut="hide(['tooltip']);"> &nbsp;&nbsp;&nbsp;
+			2)  <input type="text" id="s02" name="last1" placeholder="Last Name" onMouseOver="showTooltip(9);" onMouseOut="hide(['tooltip']);"><br>
+			3)  <input type="number" maxlength="4" id="s03" placeholder="Birth Year" onMouseOver="showTooltip(10);" onMouseOut="hide(['tooltip']);">&nbsp;&nbsp;&nbsp;
+			4)  <input type="number" maxlength="4" id="s04" placeholder="Death Year" onMouseOver="showTooltip(11);" onMouseOut="hide(['tooltip']);"><br>
+			&nbsp; <br><u>Parents</u>:<br>
+			5)  <input type="text" id="s05" placeholder="Father" onMouseOver="showTooltip(12);" onMouseOut="hide(['tooltip']);"> &nbsp;&nbsp;&nbsp;
+			6)  <input type="text" id="s06" name="last2" placeholder="Last Name" readonly="readonly" style="background: transparent; border: 0;" onclick="smoke.signal('This is the same as (2)')" onMouseOver="showTooltip(13);" onMouseOut="hide(['tooltip']);"><br>
+			7)  <input type="text" id="s07" placeholder="Mother" onMouseOver="showTooltip(14);" onMouseOut="hide(['tooltip']);"> &nbsp;&nbsp;&nbsp;
+			8)  <input type="text" id="s08" placeholder="Maiden Name" onMouseOver="showTooltip(15);" onMouseOut="hide(['tooltip']);"><br>
+			&nbsp; <br><u>Spouse</u>:<br>
+			9)  <input type="text" id="s09" placeholder="Spouse" onMouseOver="showTooltip(16);" onMouseOut="hide(['tooltip']);">&nbsp;
+			10) <input type="text" id="s10" placeholder="Last Name" onMouseOver="showTooltip(17);" onMouseOut="hide(['tooltip']);"><br>
+			&nbsp; <br>
+			<span alt="Search Button" onclick="searchButton()">Search</span>
+			&nbsp;
+		</form>
+	</div>
+	
+<!-- Settngs -->
+	<div id="settingsDiv">
+		<b>Auto-hide Information Sidebar?</b> <br>
+		Yes (default): <input type="radio" id="r1" name="AutoHideOn" checked="checked" value="Yes" onClick="AutoHideOn = 1; localStorage.setItem('AutoHideOn', 1);"><label for="r1"></label> &nbsp; &nbsp;&nbsp;&nbsp;
+		No: <input type="radio" id="r2" name="AutoHideOn" value="No" onClick="AutoHideOn = 0; localStorage.setItem('AutoHideOn', 0);"><label for="r2"></label>
+		<br>&nbsp;<br>
+		<b>Display Tooltips?</b> <br>
+		Yes (default): <input type="radio" id="r3" name="TooltipOn" checked="checked" value="true" onClick="TooltipOn = true; localStorage.setItem('TooltipOn', true);"><label for="r3"></label> &nbsp; &nbsp;&nbsp;&nbsp;
+		No: <input type="radio" id="r4" name="TooltipOn" value="false" onClick="TooltipOn = false; localStorage.setItem('TooltipOn', false);"><label for="r4"></label>
+		<br>&nbsp;<br>
+		<b>Set Home Person:</b> <br>
+		<select style="width:400px;" id="selectPerson" onChange="setHomeNode()"></select>
+	</div>
+	
+<!-- Controls -->
+	<div id="controlsDiv" class="hide">
+		<table class="controls">
+			<tr><td>Select Person (Show Family)</td><td class="red">Double Click</td></tr>
+			<tr><td>Move Tree</td><td class="red">Click & Drag</td></tr>
+			<tr><td>Show Information on Person</td><td class="red">Right Click Person</td></tr>
+			<tr><td>Show Information on Marriage</td><td class="red">Right Click 'M' Box</td></tr>
+			<tr><td>Zoom In / Out</td><td class="red">Mouse Scroll <br> PgUp / PgDn</td></tr>
+			<tr><td colspan="2">The <img src="images/icon.ico" align="middle"> icon shows living people.</td></tr>				
+		</table>
+	</div>
+
+<!-- Charts -->
+	<div id="chartsDiv">
+		<div id="charts_SELECT">
+			<button class="charts_BTN" onClick="getGraph(1);">Gender Distribution</button><br>
+			<button class="charts_BTN" onClick="getGraph(2);">Top Male Names</button><br>
+			<button class="charts_BTN" onClick="getGraph(3);">Top Female Names</button><br>
+			<button class="charts_BTN" onClick="getGraph(4);">Top Surnames</button>
+		</div>
+		<canvas id="charts_CANVAS" width="550px" height="400px"></canvas><br>
+	</div>
+	
+<!-- Help Box -->
+	<div id="helpBox" class="hide">
+		<!-- Insert help text here -->
+	</div>
+	
+	<form id="PHP_download" action="http://www.dalkeithelectrics.com/Euan/Family/php/download.php" method="post" target="_blank" enctype="multipart/form-data"></form>
+	<form id="PHP_save" action="http://www.dalkeithelectrics.com/Euan/Family/php/save.php" method="post" target="_blank" enctype="multipart/form-data"></form>
+	<form id="PHP_error" action="http://www.dalkeithelectrics.com/Euan/Family/php/error.php" method="post" target="_blank" enctype="multipart/form-data"></form>
+	
+	<div id="infoBox" class="hide"><!--Insert Info Here--></div>
+	
+<!--Forms for editing data-->
+	<div id="EditForm" name="EditForm" class="hide">
+		<div id="EditScroll" name="EditScroll">
+			<form id="EditForm1">
+			<table id="EditFormTable">
+				<tr>
+					<td colspan="4"><center>ID: <input name="edit_ID" type="text" value="" readonly="readonly"></center></td>
+				</tr>
+				<tr>
+					<td colspan="4"><center><span onClick="toggleRow('edit_r_Basic')">Basic ></span></center></td>
+				</tr>
+				<tr id="edit_r_Basic" class="rowShow">
+					<td colspan="4">
+						<table>
+							<tr>
+								<td>Forename(s):</td>
+								<td><input name="edit_GIVN" type="text" value="" placeholder="Forename"></td>
+								<td>Surname:</td>
+								<td><input name="edit_SURN" type="text" value="" placeholder="Surname"></td>
+							</tr>
+							<tr>
+								<td>Nickname:</td>
+								<td><input name="edit_NICK" type="text" value="" placeholder="Nickname"></td>
+								<td></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>Prefix:</td>
+								<td><select name="edit_NPFX">
+									<option value="Mr.">Mr.</option>
+									<option value="Mrs.">Mrs.</option>
+									<option value="Ms.">Ms.</option>
+									<option value="Dr.">Dr.</option>
+									<option value="Prof.">Prof.</option>
+									<option value="Rev.">Rev.</option>
+									<option value="Atty.">Atty.</option>
+									<option value="Hon.">Hon.</option>
+									<option value="Gov.">Gov.</option>
+								<select></td>
+								<td>Suffix:</td>
+								<td><select name="edit_NSFX">
+									<option value="Jr.">Jr.</option>
+									<option value="Snr.">Snr.</option>
+									<option value="I.">I.</option>
+									<option value="II.">II.</option>
+									<option value="III.">III.</option>
+									<option value="IV.">IV.</option>
+									<option value="V.">V.</option>
+									<option value="Esq.">Esq.</option>
+								<select></td>
+							</tr>
+							<tr>
+								<td>Gender:</td>
+								<td><select name="edit_GEND">
+									<option value="M">Male</option>
+									<option value="F">Female</option>
+									<option value="U">Unknown</option>
+								<select></td>
+								<td></td>
+								<td></td>
+							</tr>
+						</td>
+					</table>
+				</tr>
+				<tr>
+					<td colspan="4"><center><span onClick="toggleRow('edit_r_Birth');">Birth/Death Info ></span></center></td>
+				</tr>
+				<tr id="edit_r_Birth" class="rowHide">
+					<td colspan="4">
+						<table>
+							<tr>
+								<td>Date of Birth:</td>
+								<td>
+									<select name="edit_DOB0" onClick="toggleRow('edit_r_AltDates');" placeholder="Exactly">
+										<option value="" selected>Exactly</option>
+										<option value="ABT">About</option>
+										<option value="BEF">Before</option>
+										<option value="AFT">After</option>
+										<option value="BET">Between</option>
+										<option value="ETR">Either..Or..</option>
+									</select>
+								</td>
+								<td>Date of Death:</td>
+								<td>
+									<select name="edit_DOD0" onClick="toggleRow('edit_r_AltDates');" placeholder="Exactly">
+										<option value="" selected>Exactly</option>
+										<option value="ABT">About</option>
+										<option value="BEF">Before</option>
+										<option value="AFT">After</option>
+										<option value="BET">Between</option>
+										<option value="ETR">Either..Or..</option>
+									</select>
+								</td>
+							</tr>
+							<tr>
+								<td></td>
+								<td>
+									<input name="edit_DOB1" type="number" value="0" maxlength="2" min="00" max="31" placeholder="DD">
+									<select name="edit_DOB2" placeholder="MTH">
+										<option value="">---</option>
+										<option value="JAN">JAN</option>
+										<option value="FEB">FEB</option>
+										<option value="MAR">MAR</option>
+										<option value="APR">APR</option>
+										<option value="MAY">MAY</option>
+										<option value="JUN">JUN</option>
+										<option value="JUL">JUL</option>
+										<option value="AUG">AUG</option>
+										<option value="SEP">SEP</option>
+										<option value="OCT">OCT</option>
+										<option value="NOV">NOV</option>
+										<option value="DEC">DEC</option>
+									</select>
+									<input name="edit_DOB3" type="number" value="0" maxlength="4" min="0000" max="2013" placeholder="YYYY">
+								</td>
+								<td></td>
+								<td>
+									<input name="edit_DOD1" type="number" value="0" maxlength="2" min="00" max="31" placeholder="DD">
+									<select name="edit_DOD2" placeholder="MTH">
+										<option value="">---</option>
+										<option value="JAN">JAN</option>
+										<option value="FEB">FEB</option>
+										<option value="MAR">MAR</option>
+										<option value="APR">APR</option>
+										<option value="MAY">MAY</option>
+										<option value="JUN">JUN</option>
+										<option value="JUL">JUL</option>
+										<option value="AUG">AUG</option>
+										<option value="SEP">SEP</option>
+										<option value="OCT">OCT</option>
+										<option value="NOV">NOV</option>
+										<option value="DEC">DEC</option>
+									</select>
+									<input name="edit_DOD3" type="number" value="0" maxlength="4" min="0000" max="2013" placeholder="YYYY">
+								</td>
+							</tr>
+							<tr id="edit_r_AltDates" class="rowHide">
+								<td>Alternative:</td>
+								<td>
+									<input name="edit_DOB4" type="number" value="0" maxlength="2" min="00" max="31" placeholder="DD">
+									<select name="edit_DOB5" placeholder="MTH">
+										<option value="">---</option>
+										<option value="JAN">JAN</option>
+										<option value="FEB">FEB</option>
+										<option value="MAR">MAR</option>
+										<option value="APR">APR</option>
+										<option value="MAY">MAY</option>
+										<option value="JUN">JUN</option>
+										<option value="JUL">JUL</option>
+										<option value="AUG">AUG</option>
+										<option value="SEP">SEP</option>
+										<option value="OCT">OCT</option>
+										<option value="NOV">NOV</option>
+										<option value="DEC">DEC</option>
+									</select>
+									<input name="edit_DOB6" type="number" value="0" maxlength="4" min="0000" max="2013" placeholder="YYYY">
+								</td>
+								<td>Alternative:</td>
+								<td>
+									<input name="edit_DOD4" type="number" value="0" maxlength="2" min="00" max="31" placeholder="DD">
+									<select name="edit_DOD5" placeholder="MTH">
+										<option value="">---</option>
+										<option value="FEB">FEB</option>
+										<option value="MAR">MAR</option>
+										<option value="APR">APR</option>
+										<option value="MAY">MAY</option>
+										<option value="JUN">JUN</option>
+										<option value="JUL">JUL</option>
+										<option value="AUG">AUG</option>
+										<option value="SEP">SEP</option>
+										<option value="OCT">OCT</option>
+										<option value="NOV">NOV</option>
+										<option value="DEC">DEC</option>
+									</select>
+									<input name="edit_DOD6" type="number" value="0" maxlength="4" min="0000" max="2013" placeholder="YYYY">
+								</td>
+							</tr>
+							<tr>
+								<td>Place of Birth:</td>
+								<td><input name="edit_POB1" type="text" value="" placeholder="Street"></td>
+								<td>Place of Death:</td>
+								<td><input name="edit_POD1" type="text" value="" placeholder="Street"></td>
+							</tr>
+							<tr>
+								<td></td>
+								<td><input name="edit_POB2" type="text" value="" placeholder="County"></td>
+								<td></td>
+								<td><input name="edit_POD2" type="text" value="" placeholder="County"></td>
+							</tr>
+							<tr>
+								<td></td>
+								<td><input name="edit_POB3" type="text" value="" placeholder="Country"></td>
+								<td></td>
+								<td><input name="edit_POD3" type="text" value="" placeholder="Country"></td>
+							</tr>
+							<tr>
+								<td>Time of Birth:</td>
+								<td><input name="edit_TOB1" type="number" value="" min="00" max="23" placeholder="00">
+									 <input name="edit_TOB2" type="number" value="" min="00" max="59" placeholder="00"></td>
+								<td>Time of Death:</td>
+								<td><input name="edit_TOD1" type="number" value="" min="00" max="23" placeholder="00">
+									 <input name="edit_TOD2" type="number" value="" min="00" max="59" placeholder="00"></td>
+							</tr>
+							<tr>
+								<td>Note:</td>
+								<td><input name="edit_NOB" type="text" placeholder="Enter Note"></td>
+								<td>Note:</td>
+								<td><input name="edit_NOD" type="text" placeholder="Enter Note"></td>
+							</tr>
+							<tr>
+								<td>Source:</td>
+								<td><input name="edit_SOB" type="text" placeholder="Enter Source"></td>
+								<td>Source:</td>
+								<td><input name="edit_SOD" type="text" placeholder="Enter Source"></td>
+							</tr>
+						</td>
+					</table>
+				</tr>
+				<tr>
+					<td colspan="4"><center><span onClick="toggleRow('edit_r_Burial');">Burial/Cremation Info ></span></center></td>
+				</tr>
+				<tr id="edit_r_Burial" class="rowHide">
+					<td colspan="4">
+						<table>
+							<tr>
+								<td>Date of Burial:</td>
+								<td>
+									<select name="edit_BURD0" onClick="toggleRow('edit_r_AltDates2');" placeholder="Exactly">
+										<option value="" selected>Exactly</option>
+										<option value="ABT">About</option>
+										<option value="BEF">Before</option>
+										<option value="AFT">After</option>
+										<option value="BET">Between</option>
+										<option value="ETR">Either..Or..</option>
+									</select>
+								</td>
+								<td colspan="2">
+									<input name="edit_BURD1" type="number" value="0" maxlength="2" min="00" max="31" placeholder="DD">
+									<select name="edit_BURD2" placeholder="MTH">
+										<option value="">---</option>
+										<option value="JAN">JAN</option>
+										<option value="FEB">FEB</option>
+										<option value="MAR">MAR</option>
+										<option value="APR">APR</option>
+										<option value="MAY">MAY</option>
+										<option value="JUN">JUN</option>
+										<option value="JUL">JUL</option>
+										<option value="AUG">AUG</option>
+										<option value="SEP">SEP</option>
+										<option value="OCT">OCT</option>
+										<option value="NOV">NOV</option>
+										<option value="DEC">DEC</option>
+									</select>
+									<input name="edit_BURD3" type="number" value="0" maxlength="4" min="0000" max="2013" placeholder="YYYY">
+								</td>
+							</tr>
+							<tr id="edit_r_AltDates2" class="rowHide">
+								<td>Alternative:</td>
+								<td colspan="3">
+									<input name="edit_BURD4" type="number" value="0" maxlength="2" min="00" max="31" placeholder="DD">
+									<select name="edit_BURD5" placeholder="MTH">
+										<option value="">---</option>
+										<option value="JAN">JAN</option>
+										<option value="FEB">FEB</option>
+										<option value="MAR">MAR</option>
+										<option value="APR">APR</option>
+										<option value="MAY">MAY</option>
+										<option value="JUN">JUN</option>
+										<option value="JUL">JUL</option>
+										<option value="AUG">AUG</option>
+										<option value="SEP">SEP</option>
+										<option value="OCT">OCT</option>
+										<option value="NOV">NOV</option>
+										<option value="DEC">DEC</option>
+									</select>
+									<input name="edit_BURD6" type="number" value="0" maxlength="4" min="0000" max="2013" placeholder="YYYY">
+								</td>
+							</tr>
+							<tr>
+								<td>Place of Burial:</td>
+								<td><input name="edit_BURP1" type="text" value="" placeholder="Street"></td>
+								<td><input name="edit_BURP2" type="text" value="" placeholder="County"></td>
+								<td><input name="edit_BURP3" type="text" value="" placeholder="Country"></td>
+							</tr>
+							<tr>
+								<td>Note:</td>
+								<td><input name="edit_BURN" type="text" placeholder="Enter Note"></td>
+								<td>Source:</td>
+								<td><input name="edit_BURS" type="text" placeholder="Enter Source"></td>
+							</tr>
+						</td>
+					</table>
+				</tr>
+				<tr>
+					<td colspan="4"><center><span onClick="toggleRow('edit_r_General')">General ></span></center></td>
+				</tr>
+				<tr id="edit_r_General" class="rowHide">
+					<td colspan="4">
+						<table>
+							<tr>
+								<td>Occupation(s):</td>
+								<td><input name="edit_OCCU" type="text" value="" placeholder="Occupation"></td>
+								<td>Education:</td>
+								<td><input name="edit_EDUC" type="text" value="" placeholder="Education"></td>
+							</tr>
+							<tr>
+								<td>Religion:</td>
+								<td><input name="edit_RELI" type="text" value="" placeholder="Religion"></td>
+								<td></td>
+								<td></td>
+							</tr>
+							<tr>
+								<td>Note(s):</td>
+								<td colspan="3"><textarea name="edit_NOTE" rows="3" cols="50"></textarea></td>
+							</tr>
+						</td>
+					</table>
+				</tr>
+			</table>
+			</form>
+		</div>
+		<center><span onClick="saveEdit();">Save Changes</span></center>
+	</div>
+	
+	
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
